@@ -1,1 +1,5 @@
+# 忽略 src/mainData 下的所有文件夹
 src/mainData/*
+
+# 保留 src/mainData 下的所有文件（不包括文件夹）
+!src/mainData/readme.md
