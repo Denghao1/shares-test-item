@@ -10,4 +10,4 @@ result_str = run_model1(file_path, cache_path, start_date_filter, end_date_filte
 print(result_str)
 
 # === 打印到日志顶部 ===
-save_log_to_top(result_str, title="炸板策略回测结果1")
+save_log_to_top(result_str, title="炸板策略回测结果2")

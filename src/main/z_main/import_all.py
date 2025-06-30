@@ -12,6 +12,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'i
 from log_utils import save_log_to_top
 
 # === 引入回测策略 ===
-from model1 import run_model1
+from model2 import run_model1
 
 __all__ = ['save_log_to_top', 'run_model1']
