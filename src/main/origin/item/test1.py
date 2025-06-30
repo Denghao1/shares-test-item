@@ -1,3 +1,4 @@
+# 炸板策略回测结果
 import os
 import pickle
 import pandas as pd
@@ -7,7 +8,7 @@ from import_all import save_log_to_top
 
 # ==== 配置 ====
 file_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'mainData', 'data_2024')
+    os.path.join(os.path.dirname(__file__), '..', '..','mainData', 'data_2024')
 )
 cache_path = './cached_stock_data.pkl'
 start_date_filter = pd.to_datetime('2022-01-01')
@@ -48,8 +49,8 @@ else:
             print(f"读取文件 {file} 出错：{e}")
 
     df_all = pd.DataFrame(all_stock)
-    with open(cache_path, 'wb') as f:
-        pickle.dump(df_all, f)
+    # with open(cache_path, 'wb') as f:
+    #     pickle.dump(df_all, f)
 
 # ==== 回测分析 ====
 df_all = df_all[(df_all['交易日期'] >= start_date_filter) & (df_all['交易日期'] <= end_date_filter)]
