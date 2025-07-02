@@ -3,7 +3,7 @@
 import os
 from datetime import datetime
 
-def save_log_to_top(log_content: str, title: str = "日志记录", log_dir: str = "src/log", log_file: str = "log.txt"):
+def save_log_to_top(log_content: str, title: str = "日志记录",data_during:str = "", log_dir: str = "src/log", log_file: str = "log.txt"):
     """
     将日志内容写入 log/log.txt 的最顶部，附带时间与标题
     :param log_content: 要写入的文本内容
@@ -17,9 +17,10 @@ def save_log_to_top(log_content: str, title: str = "日志记录", log_dir: str 
     # 时间戳
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     header = f"【{title}】 {timestamp}\n"
+    dateDuring = f"(时间段: {data_during})\n"
 
     # 新内容 + 旧内容
-    new_entry = header + log_content.strip() + "\n" + "="*60 + "\n"
+    new_entry = header + dateDuring + log_content.strip() + "\n" + "="*60 + "\n"
 
     if os.path.exists(path):
         with open(path, 'r', encoding='utf-8') as f:

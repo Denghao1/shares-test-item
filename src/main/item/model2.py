@@ -18,7 +18,7 @@ def safe_read_csv(filepath):
     print(f"❌ 文件无法读取：{filepath}")
     return None
 
-def run_model1(file_path, cache_path, start_date_filter, end_date_filter):
+def run_model2(file_path, cache_path, start_date_filter, end_date_filter):
     if os.path.exists(cache_path):
         print(f"❌ 错误")
         # with open(cache_path, 'rb') as f:
