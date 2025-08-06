@@ -75,8 +75,9 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
             for i in range(2, len(df) - 3):
                 if not df.at[i - 2, '是否涨停']:
                     continue
-                if not (-0.105 <= df.at[i - 1, '涨幅'] <= 0.02):
-                    continue
+                # # 断板日涨幅
+                # if not (0.045 <= df.at[i - 1, '涨幅'] <= 0.09):
+                #     continue
 
                 today_high = df.at[i, '最高']
                 today_low = df.at[i, '最低']
@@ -92,13 +93,17 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
                     continue
 
                 # 振幅 = (today_high - today_low) / today_pre_close # 打板日振幅
-                振幅 = (today_high_1 - today_low_1) / today_pre_close_1 # 断板日振幅
+                # 振幅 = (today_high_1 - today_low_1) / today_pre_close_1 # 断板日振幅
                 # 振幅 = (today_open / today_pre_close ) - 1 # 打板日开盘价振幅
                 # 振幅 = today_complete / pre_complete # 量能振幅
+                振幅 = df.at[i - 1, '涨幅'] # 断板日涨幅
 
-                limit_price = round(today_pre_close * 1.095, 2)
-                if not (round(today_close, 2) >= limit_price or round(today_high, 2) >= limit_price):
+                # 断板日振幅
+                if not (0.015 <= (today_high_1 - today_low_1) / today_pre_close_1 <= 0.08):
                     continue
+                # limit_price = round(today_pre_close * 1.095, 2)
+                # if not (round(today_close, 2) >= limit_price or round(today_high, 2) >= limit_price):
+                #     continue
 
                 record = {
                     '股票代码': code,
@@ -106,7 +111,7 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
                     '振幅': 振幅
                 }
 
-                buy_price = today_high
+                buy_price = today_open
                 if i + 1 < len(df):
                     open2, close2 = df.at[i + 1, '开盘'], df.at[i + 1, '收盘']
                     record['第2天开盘收益'] = (open2 / buy_price - 1) if pd.notna(open2) else np.nan
@@ -127,7 +132,7 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
         return
 
     # 分箱振幅区间（-22% ~ 22%，每2%一档）
-    bins = np.arange(0, 0.24, 0.02)
+    bins = np.arange(-0.105, 0.105, 0.02)
     labels = [f"{int(left*100)}%–{int(right*100)}%" for left, right in zip(bins[:-1], bins[1:])]
     df_all['振幅区间'] = pd.cut(df_all['振幅'], bins=bins, labels=labels, include_lowest=True)
 
