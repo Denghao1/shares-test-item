@@ -85,11 +85,17 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
                 today_low_1 = df.at[i - 1, '最低']
                 today_pre_close_1 = df.at[i - 1, '前收']
                 today_close = df.at[i, '收盘']
+                today_open = df.at[i, '开盘']
+                pre_complete = df.at[i - 2, '成交额']
+                today_complete = df.at[i - 1, '成交额']
                 if pd.isna(today_high) or pd.isna(today_low) or pd.isna(today_pre_close):
                     continue
 
                 # 振幅 = (today_high - today_low) / today_pre_close # 打板日振幅
                 振幅 = (today_high_1 - today_low_1) / today_pre_close_1 # 断板日振幅
+                # 振幅 = (today_open / today_pre_close ) - 1 # 打板日开盘价振幅
+                # 振幅 = today_complete / pre_complete # 量能振幅
+
                 limit_price = round(today_pre_close * 1.095, 2)
                 if not (round(today_close, 2) >= limit_price or round(today_high, 2) >= limit_price):
                     continue
