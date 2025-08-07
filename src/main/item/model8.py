@@ -1,4 +1,4 @@
-# Re-execute the finalized code after environment reset
+# 断板次日买入回测结果
 
 import os
 import pandas as pd
@@ -51,6 +51,57 @@ def format_sign(value, is_rate=False):
     except:
         return "NaN"
 
+def simulate_from_df_random_trades(
+    df_all: pd.DataFrame,
+    start_date="2022-12-01",
+    end_date="2025-06-30",
+    num_trades=100,
+    initial_fund=100000,
+    seed=None
+):
+    """
+    根据 df_all 中的“第2天尾盘收益”模拟资金增长：
+    - 只使用日期在 start_date 到 end_date 范围内的数据
+    - 随机抽取 num_trades 条交易记录
+    - 每次用全部资金买入，收益根据“第2天尾盘收益”计算
+    """
+    if seed is not None:
+        np.random.seed(seed)
+    
+    # 过滤日期范围
+    df_filtered = df_all[(df_all['日期'] >= pd.to_datetime(start_date)) & (df_all['日期'] <= pd.to_datetime(end_date))]
+    df_filtered = df_filtered.dropna(subset=['第2天尾盘收益'])
+    if len(df_filtered) < num_trades:
+        print(f"警告：符合日期和收益率条件的数据不足{num_trades}条，只能模拟{len(df_filtered)}次交易。")
+        num_trades = len(df_filtered)
+    
+    # 随机抽取 num_trades 条记录
+    sampled = df_filtered.sample(n=num_trades, random_state=seed).reset_index(drop=True)
+    
+    fund = initial_fund
+    log = []
+    for i, row in sampled.iterrows():
+        r = row['第2天尾盘收益']
+        profit = fund * r
+        fund += profit
+        log.append({
+            "交易序号": i + 1,
+            "交易日期": row['日期'].strftime("%Y-%m-%d"),
+            "股票代码": row['股票代码'],
+            "收益率": f"{r:.2%}",
+            "收益金额": f"{profit:.2f}",
+            "资金余额": f"{fund:.2f}"
+        })
+    
+    df_log = pd.DataFrame(log)
+    summary = {
+        "初始资金": f"{initial_fund:.2f}",
+        "最终资金": f"{fund:.2f}",
+        "总收益": f"{fund - initial_fund:.2f}",
+        "收益率": f"{(fund / initial_fund - 1):.2%}",
+        "交易次数": num_trades
+    }
+    return summary, df_log
 def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
     all_data = []
     for file in tqdm([f for f in os.listdir(file_path) if f.endswith('.csv')], desc="读取文件"):
@@ -71,12 +122,21 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
             df['前收'] = df['收盘'].shift(1)
             df['涨幅'] = df['收盘'] / df['前收'] - 1
             df['是否涨停'] = (df['涨幅'] >= 0.097) & (df['涨幅'] <= 0.105)
-
+            # df['最高涨幅'] = df['最高'] / df['前收'] - 1
+            # df['是否涨停过'] = (df['最高涨幅'] >= 0.097) & (df['最高涨幅'] <= 0.105)
+            # df['是否炸板'] = df['收盘'] < df['最高']
+            # df.at[i - 2, '是否涨停']
             for i in range(2, len(df) - 3):
                 if not df.at[i - 2, '是否涨停']:
                     continue
-                # # 断板日涨幅
-                # if not (0.045 <= df.at[i - 1, '涨幅'] <= 0.09):
+                # if not df.at[i - 3, '是否涨停']:
+                #     continue
+                # if not df.at[i - 4, '是否涨停']:
+                #     continue
+                # 断板日涨幅
+                if not (-0.105 <= df.at[i - 1, '涨幅'] <= -0.04):
+                    continue
+                # if not df['是否炸板'] & df['是否涨停过']:
                 #     continue
 
                 today_high = df.at[i, '最高']
@@ -94,16 +154,23 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
 
                 # 振幅 = (today_high - today_low) / today_pre_close # 打板日振幅
                 # 振幅 = (today_high_1 - today_low_1) / today_pre_close_1 # 断板日振幅
-                # 振幅 = (today_open / today_pre_close ) - 1 # 打板日开盘价振幅
+                振幅 = (today_open / today_pre_close ) - 1 # 打板日开盘价振幅
                 # 振幅 = today_complete / pre_complete # 量能振幅
-                振幅 = df.at[i - 1, '涨幅'] # 断板日涨幅
+                # 振幅 = df.at[i - 1, '涨幅'] # 断板日涨幅
 
-                # 断板日振幅
-                if not (0.015 <= (today_high_1 - today_low_1) / today_pre_close_1 <= 0.08):
-                    continue
-                # limit_price = round(today_pre_close * 1.095, 2)
-                # if not (round(today_close, 2) >= limit_price or round(today_high, 2) >= limit_price):
+                # # 断板日振幅
+                # if not (0.02 <= (today_high_1 - today_low_1) / today_pre_close_1 <= 0.05):
                 #     continue
+                # # 断板日涨幅
+                # if not (0.01 <= df.at[i - 1, '涨幅'] <= 0.05):
+                #     continue
+                # # 打板日开盘价振幅
+                # if not (-0.06 <= 振幅 <= 0.01):
+                #     continue
+                # 是否涨停过
+                limit_price = round(today_pre_close * 1.095, 2)
+                if not (round(today_close, 2) >= limit_price or round(today_high, 2) >= limit_price):
+                    continue
 
                 record = {
                     '股票代码': code,
@@ -111,7 +178,7 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
                     '振幅': 振幅
                 }
 
-                buy_price = today_open
+                buy_price = today_high
                 if i + 1 < len(df):
                     open2, close2 = df.at[i + 1, '开盘'], df.at[i + 1, '收盘']
                     record['第2天开盘收益'] = (open2 / buy_price - 1) if pd.notna(open2) else np.nan
@@ -192,5 +259,15 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
     print(tabulate(sample_df[['股票代码', '日期', '振幅区间','振幅',
                               '第2天开盘收益', '第2天尾盘收益',
                               '第3天开盘收益', '第3天尾盘收益']], headers='keys', tablefmt='psql', stralign='center'))
+    print(df_all.head())  # 可选：预览前几行结果
+
+    summary, trade_log = simulate_from_df_random_trades(df_all, start_date="2022-12-01", end_date="2025-06-30", num_trades=1000, initial_fund=100000, seed=23)
+
+    print("💰 模拟资金增长情况：")
+    for k, v in summary.items():
+        print(f"{k}: {v}")
+
+    print("\n📈 随机抽取交易记录（前100条）：")
+    print(trade_log.head(100))
 
     return grouped_print
