@@ -135,8 +135,8 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
                 #     continue
                 if not df.at[i - 1, '是否炸板'] & df.at[i - 1, '是否涨停过']:
                     continue
-                if not df.at[i - 1, '收盘'] > df.at[i - 1, '开盘']:
-                    continue
+                # if not df.at[i - 1, '收盘'] > df.at[i - 1, '开盘']:
+                #     continue
 
                 today_high = df.at[i, '最高']
                 today_low = df.at[i, '最低']
@@ -161,8 +161,8 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
                 # if not (0.015 <= (today_high_1 - today_low_1) / today_pre_close_1 <= 0.065):
                 #     continue
                 # 断板日涨幅
-                # if not (0.07 <= df.at[i - 1, '涨幅'] <= 0.095):
-                #     continue
+                if not (0.05 <= df.at[i - 1, '涨幅'] <= 0.095):
+                    continue
                 # # 断板日量能振幅
                 if not (0 <= today_complete / pre_complete <= 1):
                     continue
