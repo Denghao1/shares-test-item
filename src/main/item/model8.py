@@ -127,16 +127,16 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
             df['是否炸板'] = df['收盘'] < df['最高']
             # df.at[i - 2, '是否涨停']
             for i in range(2, len(df) - 3):
-                if not df.at[i - 2, '是否涨停']:
-                    continue
+                # if not df.at[i - 2, '是否涨停']:
+                #     continue
                 # if not df.at[i - 3, '是否涨停']:
                 #     continue
                 # if df.at[i - 4, '是否涨停'] & df.at[i - 3, '是否涨停']:
                 #     continue
-                # if not df.at[i - 1, '是否炸板'] & df.at[i - 1, '是否涨停过']:
-                #     continue
-                # if not df.at[i - 1, '收盘'] < df.at[i - 1, '开盘']:
-                #     continue
+                if not df.at[i - 1, '是否炸板'] & df.at[i - 1, '是否涨停过']:
+                    continue
+                if not df.at[i - 1, '收盘'] > df.at[i - 1, '开盘']:
+                    continue
 
                 today_high = df.at[i, '最高']
                 today_low = df.at[i, '最低']
@@ -153,19 +153,22 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
 
                 # 振幅 = (today_high - today_low) / today_pre_close # 打板日振幅
                 # 振幅 = (today_high_1 - today_low_1) / today_pre_close_1 # 断板日振幅
-                振幅 = (today_open / today_pre_close ) - 1 # 打板日开盘价振幅
-                # 振幅 = today_complete / pre_complete # 量能振幅
-                # 振幅 = df.at[i - 1, '涨幅'] # 断板日涨幅
+                # 振幅 = (today_open / today_pre_close ) - 1 # 打板日开盘价振幅
+                # 振幅 = today_complete / pre_complete # 断板日量能振幅
+                振幅 = df.at[i - 1, '涨幅'] # 断板日涨幅
 
-                # 断板日振幅
-                if not (0.015 <= (today_high_1 - today_low_1) / today_pre_close_1 <= 0.065):
-                    continue
+                # # 断板日振幅
+                # if not (0.015 <= (today_high_1 - today_low_1) / today_pre_close_1 <= 0.065):
+                #     continue
                 # 断板日涨幅
-                if not (0.015 <= df.at[i - 1, '涨幅'] <= 0.06):
+                # if not (0.07 <= df.at[i - 1, '涨幅'] <= 0.095):
+                #     continue
+                # # 断板日量能振幅
+                if not (0 <= today_complete / pre_complete <= 1):
                     continue
-                # 打板日开盘价振幅
-                if not (-0.06 <= 振幅 <= 0.0):
-                    continue
+                # # 打板日开盘价振幅
+                # if not (-0.06 <= 振幅 <= 0.0):
+                #     continue
                 # 是否涨停过
                 # limit_price = round(today_pre_close * 1.095, 2)
                 # if not (round(today_close, 2) >= limit_price or round(today_high, 2) >= limit_price):
@@ -198,7 +201,8 @@ def run_fanbao_zhenfu_zt_model(file_path, start_date_filter, end_date_filter):
         return
 
     # 分箱振幅区间（-22% ~ 22%，每2%一档）
-    bins = np.arange(-0.105, 0.105, 0.02)
+    # bins = np.arange(0.4, 4.0, 0.4)
+    bins = np.arange(-0.105, 0.13, 0.02)
     labels = [f"{int(left*100)}%–{int(right*100)}%" for left, right in zip(bins[:-1], bins[1:])]
     df_all['振幅区间'] = pd.cut(df_all['振幅'], bins=bins, labels=labels, include_lowest=True)
 
